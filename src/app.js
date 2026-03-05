@@ -19,6 +19,10 @@ app.get('/api/protected', protect, (req, res) => {
     });
 });
 
+import blogRoutes from './routes/blog.routes.js';
+
+app.use('/api/blog', blogRoutes);
+
 app.use(errorHandler);
 
 export default app;
