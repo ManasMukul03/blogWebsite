@@ -23,6 +23,12 @@ import blogRoutes from './routes/blog.routes.js';
 
 app.use('/api/blog', blogRoutes);
 
+
+import commentRoutes from "./routes/comment.routes.js";
+app.use("/api/comment", commentRoutes);
+
+
+
 app.use(errorHandler);
 
 export default app;

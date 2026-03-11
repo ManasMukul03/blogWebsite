@@ -29,6 +29,16 @@ const blogSchema = new mongoose.Schema(
                 type: String
             }
         ],
+        likes: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "User"
+            }
+        ],
+        views: {
+            type: Number,
+            default: 0
+        },
 
         coverImage: {
             type: String
