@@ -24,7 +24,7 @@ export const createComment = asyncHandler(async (req, res) => {
     const comment = await Comment.create({
         text,
         blog: blogId,
-        author: req.user._id
+        user: req.user._id
     });
 
     res.status(201).json({
@@ -41,7 +41,7 @@ export const getComments = asyncHandler(async (req, res) => {
     const comments = await Comment.find({
         blog: req.params.blogId
     })
-        .populate("author", "name email")
+        .populate("user", "name email")
         .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -62,7 +62,7 @@ export const deleteComment = asyncHandler(async (req, res) => {
         throw new Error("Comment not found");
     }
 
-    if (comment.author.toString() !== req.user._id.toString()) {
+    if (comment.user.toString() !== req.user._id.toString()) {
         res.status(403);
         throw new Error("Not authorized to delete this comment");
     }

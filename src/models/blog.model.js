@@ -44,13 +44,6 @@ const blogSchema = new mongoose.Schema(
             type: String
         },
 
-        likes: [
-            {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: 'User'
-            }
-        ],
-
         isPublished: {
             type: Boolean,
             default: true

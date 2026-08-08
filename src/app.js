@@ -2,11 +2,13 @@ import express from 'express';
 import authRoutes from './routes/auth.routes.js';
 import cookieParser from 'cookie-parser';
 import errorHandler from "./middleware/error.middleware.js";
+import { globalLimiter } from './middleware/rateLimiter.middleware.js';
 
 const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
+app.use(globalLimiter);
 
 app.use('/api/auth', authRoutes);
 
@@ -27,7 +29,8 @@ app.use('/api/blog', blogRoutes);
 import commentRoutes from "./routes/comment.routes.js";
 app.use("/api/comment", commentRoutes);
 
-
+import uploadRoutes from './routes/upload.routes.js';
+app.use('/api/upload', uploadRoutes);
 
 app.use(errorHandler);
 

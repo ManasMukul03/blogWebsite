@@ -6,11 +6,13 @@ import {
 } from "../controllers/comment.controller.js";
 
 import protect from "../middleware/auth.middleware.js";
+import { createCommentValidator } from "../validators/comment.validator.js";
+import validate from "../middleware/validate.middleware.js";
 
 const router = express.Router();
 
 // Create comment
-router.post("/:blogId", protect, createComment);
+router.post("/:blogId", protect, createCommentValidator, validate, createComment);
 
 // Get comments for a blog
 router.get("/:blogId", getComments);

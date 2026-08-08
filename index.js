@@ -1,14 +1,13 @@
-import dotenv from 'dotenv';
-dotenv.config();
+import 'dotenv/config';
 
 import app from './src/app.js';
 import connectDB from './src/config/db.js';
-
-console.log('ENV CHECK:', process.env.MONGO_URI);
+import { connectRedis } from './src/config/redis.js';
 
 const startServer = async () => {
     try {
         await connectDB();
+        await connectRedis();
 
         const PORT = process.env.PORT || 5000;
 

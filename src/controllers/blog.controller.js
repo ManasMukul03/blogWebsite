@@ -2,6 +2,7 @@ import User from "../models/user.model.js";
 import Blog from '../models/blog.model.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import slugify from "slugify";
+import { clearCacheByPrefix } from '../utils/clearCache.js';
 
 export const createBlog = asyncHandler(async (req, res) => {
 
@@ -22,6 +23,9 @@ export const createBlog = asyncHandler(async (req, res) => {
         coverImage,
         author: req.user._id
     });
+
+    await clearCacheByPrefix('blogs');
+    await clearCacheByPrefix('trending');
 
     res.status(201).json({
         message: "Blog created successfully",
@@ -111,6 +115,9 @@ export const updateBlog = asyncHandler(async (req, res) => {
 
     const updatedBlog = await blog.save();
 
+    await clearCacheByPrefix('blogs');
+    await clearCacheByPrefix('trending');
+
     res.status(200).json({
         message: "Blog updated successfully",
         blog: updatedBlog
@@ -134,6 +141,9 @@ export const deleteBlog = asyncHandler(async (req, res) => {
     }
 
     await blog.deleteOne();
+
+    await clearCacheByPrefix('blogs');
+    await clearCacheByPrefix('trending');
 
     res.status(200).json({
         message: "Blog deleted successfully"
