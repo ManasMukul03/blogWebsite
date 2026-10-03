@@ -1,7 +1,12 @@
-import redisClient from '../config/redis.js';
+import redisClient, { isRedisReady } from '../config/redis.js';
 
 const cache = (keyPrefix, ttlSeconds = 60) => {
     return async (req, res, next) => {
+        // Without a live connection, commands would queue and hang the request
+        if (!isRedisReady()) {
+            return next();
+        }
+
         const key = `${keyPrefix}:${req.originalUrl}`;
 
         try {

@@ -7,7 +7,7 @@ import { connectRedis } from './src/config/redis.js';
 const startServer = async () => {
     try {
         await connectDB();
-        await connectRedis();
+        connectRedis();
 
         const PORT = process.env.PORT || 5000;
 
