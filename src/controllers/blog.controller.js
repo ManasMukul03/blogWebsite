@@ -1,8 +1,26 @@
 import User from "../models/user.model.js";
 import Blog from '../models/blog.model.js';
+import Comment from '../models/comment.model.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import slugify from "slugify";
 import { clearCacheByPrefix } from '../utils/clearCache.js';
+
+const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// Appends -2, -3, ... until the slug is free (ignoring the blog being updated).
+const generateUniqueSlug = async (title, excludeId = null) => {
+    const base = slugify(title, { lower: true, strict: true }) || 'post';
+
+    let slug = base;
+    let counter = 1;
+
+    while (await Blog.exists({ slug, _id: { $ne: excludeId } })) {
+        counter += 1;
+        slug = `${base}-${counter}`;
+    }
+
+    return slug;
+};
 
 export const createBlog = asyncHandler(async (req, res) => {
 
@@ -13,7 +31,7 @@ export const createBlog = asyncHandler(async (req, res) => {
         throw new Error("Title and content are required");
     }
 
-    const slug = slugify(title, { lower: true });
+    const slug = await generateUniqueSlug(title);
 
     const blog = await Blog.create({
         title,
@@ -41,27 +59,23 @@ export const getBlogs = asyncHandler(async (req, res) => {
 
     const skip = (page - 1) * limit;
 
-    const search = req.query.search || "";
+    const search = escapeRegex(String(req.query.search || ""));
 
-    const blogs = await Blog.find({
+    const filter = {
         isPublished: true,
         $or: [
             { title: { $regex: search, $options: "i" } },
             { content: { $regex: search, $options: "i" } }
         ]
-    })
+    };
+
+    const blogs = await Blog.find(filter)
         .populate("author", "name email")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
 
-    const totalBlogs = await Blog.countDocuments({
-        isPublished: true,
-        $or: [
-            { title: { $regex: search, $options: "i" } },
-            { content: { $regex: search, $options: "i" } }
-        ]
-    });
+    const totalBlogs = await Blog.countDocuments(filter);
 
     res.status(200).json({
         page,
@@ -85,7 +99,12 @@ export const getBlogBySlug = asyncHandler(async (req, res) => {
     blog.views+=1;
     await blog.save();
 
-    res.status(200).json(blog);
+    // req.user is set by optionalAuth when the request carries a valid token
+    const isBookmarked = Boolean(
+        req.user?.bookmarks.some(id => id.toString() === blog._id.toString())
+    );
+
+    res.status(200).json({ ...blog.toObject(), isBookmarked });
 
 });
 
@@ -106,6 +125,10 @@ export const updateBlog = asyncHandler(async (req, res) => {
     }
 
     const { title, content, tags, coverImage, isPublished } = req.body;
+
+    if (title && title !== blog.title) {
+        blog.slug = await generateUniqueSlug(title, blog._id);
+    }
 
     blog.title = title || blog.title;
     blog.content = content || blog.content;
@@ -141,6 +164,13 @@ export const deleteBlog = asyncHandler(async (req, res) => {
     }
 
     await blog.deleteOne();
+
+    // Remove data that pointed at the deleted blog
+    await Comment.deleteMany({ blog: blog._id });
+    await User.updateMany(
+        { bookmarks: blog._id },
+        { $pull: { bookmarks: blog._id } }
+    );
 
     await clearCacheByPrefix('blogs');
     await clearCacheByPrefix('trending');
@@ -210,6 +240,11 @@ export const toggleBookmark = asyncHandler(async (req, res) => {
 
     const blogId = req.params.id;
 
+    if (!(await Blog.exists({ _id: blogId }))) {
+        res.status(404);
+        throw new Error("Blog not found");
+    }
+
     const alreadyBookmarked = user.bookmarks.includes(blogId);
 
     if (alreadyBookmarked) {
@@ -243,7 +278,10 @@ export const toggleBookmark = asyncHandler(async (req, res) => {
 export const getBookmarks = asyncHandler(async (req, res) => {
 
     const user = await User.findById(req.user._id)
-        .populate("bookmarks");
+        .populate({
+            path: "bookmarks",
+            populate: { path: "author", select: "name email" }
+        });
 
     res.json({
         bookmarks: user.bookmarks

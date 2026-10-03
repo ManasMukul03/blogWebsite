@@ -11,7 +11,7 @@ import {
     getBookmarks
 } from '../controllers/blog.controller.js';
 
-import protect from '../middleware/auth.middleware.js';
+import protect, { optionalAuth } from '../middleware/auth.middleware.js';
 import cache from '../middleware/cache.middleware.js';
 import { createBlogValidator, updateBlogValidator } from '../validators/blog.validator.js';
 import validate from '../middleware/validate.middleware.js';
@@ -26,7 +26,7 @@ router.get("/trending", cache('trending', 300), getTrendingBlogs);
 
 router.get("/bookmarks", protect, getBookmarks);
 
-router.get("/:slug", getBlogBySlug);
+router.get("/:slug", optionalAuth, getBlogBySlug);
 
 router.put('/:id', protect, updateBlogValidator, validate, updateBlog);
 

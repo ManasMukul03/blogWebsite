@@ -11,7 +11,7 @@ export const uploadImage = asyncHandler(async (req, res) => {
     const uploadFromBuffer = () => {
         return new Promise((resolve, reject) => {
             const stream = cloudinary.uploader.upload_stream(
-                { folder: 'blog-website' },
+                { folder: 'blog-website', quality: 'auto', fetch_format: 'auto' },
                 (error, result) => {
                     if (error) return reject(error);
                     resolve(result);
